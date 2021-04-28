@@ -93,11 +93,15 @@ public class AdaptiveClassCodeGenerator {
         }
 
         StringBuilder code = new StringBuilder();
+        // 生成 package 代码：package + type 所在包
         code.append(generatePackageInfo());
+        // 生成 import 代码：import + ExtensionLoader 全限定名
         code.append(generateImports());
+        // 生成类代码：public class + type简单名称 + $Adaptive + implements + type全限定名 + {
         code.append(generateClassDeclaration());
 
         Method[] methods = type.getMethods();
+        // 遍历方法列表
         for (Method method : methods) {
             code.append(generateMethod(method));
         }
@@ -200,9 +204,11 @@ public class AdaptiveClassCodeGenerator {
     private String generateMethodContent(Method method) {
         Adaptive adaptiveAnnotation = method.getAnnotation(Adaptive.class);
         StringBuilder code = new StringBuilder(512);
+        // 如果方法上无 Adaptive 注解，则生成 throw new UnsupportedOperationException(...) 代码
         if (adaptiveAnnotation == null) {
             return generateUnsupported(method);
         } else {
+            // 遍历参数列表，确定 URL 参数位置
             int urlTypeIndex = getUrlTypeIndex(method);
 
             // found parameter in URL type
@@ -216,6 +222,7 @@ public class AdaptiveClassCodeGenerator {
 
             String[] value = getMethodAdaptiveValue(adaptiveAnnotation);
 
+            // 检测方法列表中是否存在 Invocation 类型的参数，若存在，则为其生成判空代码和其他一些代码
             boolean hasInvocation = hasInvocationArgument(method);
 
             code.append(generateInvocationArgumentNullCheck(method));
@@ -245,6 +252,9 @@ public class AdaptiveClassCodeGenerator {
      */
     private String generateExtNameAssignment(String[] value, boolean hasInvocation) {
         // TODO: refactor it
+        // 遍历 value，这里的 value 是 Adaptive 的注解值，2.2.3.3 节分析过 value 变量的获取过程。
+        // 此处循环目的是生成从 URL 中获取拓展名的代码，生成的代码会赋值给 getNameCode 变量。注意这
+        // 个循环的遍历顺序是由后向前遍历的
         String getNameCode = null;
         for (int i = value.length - 1; i >= 0; --i) {
             if (i == value.length - 1) {
