@@ -82,14 +82,17 @@ public abstract class Proxy {
         }
 
         StringBuilder sb = new StringBuilder();
+        // 遍历接口列表
         for (int i = 0; i < ics.length; i++) {
             String itf = ics[i].getName();
+            // 检测类型是否为接口
             if (!ics[i].isInterface()) {
                 throw new RuntimeException(itf + " is not a interface.");
             }
 
             Class<?> tmp = null;
             try {
+                // 重新加载接口类
                 tmp = Class.forName(itf, false, cl);
             } catch (ClassNotFoundException e) {
             }
@@ -98,6 +101,7 @@ public abstract class Proxy {
                 throw new IllegalArgumentException(ics[i] + " is not visible from class loader");
             }
 
+            // 拼接接口全限定名，分隔符为 ;
             sb.append(itf).append(';');
         }
 
@@ -116,6 +120,7 @@ public abstract class Proxy {
         Proxy proxy = null;
         synchronized (cache) {
             do {
+                // 从缓存中获取 Reference<Proxy> 实例
                 Object value = cache.get(key);
                 if (value instanceof Reference<?>) {
                     proxy = (Proxy) ((Reference<?>) value).get();
@@ -133,12 +138,15 @@ public abstract class Proxy {
                     }
 
                     if (null == clazz) {
+                        // 并发控制，保证只有一个线程可以进行后续操作
                         if (value == PENDING_GENERATION_MARKER) {
                             try {
+                                // 其他线程在此处进行等待
                                 cache.wait();
                             } catch (InterruptedException e) {
                             }
                         } else {
+                            // 放置标志位到缓存中，并跳出 while 循环进行后续操作
                             cache.put(key, PENDING_GENERATION_MARKER);
                             break;
                         }
@@ -165,18 +173,22 @@ public abstract class Proxy {
         String pkg = null;
         ClassGenerator ccp = null, ccm = null;
         try {
+            // 创建 ClassGenerator 对象
             ccp = ClassGenerator.newInstance(cl);
 
             Set<String> worked = new HashSet<>();
             List<Method> methods = new ArrayList<>();
 
             for (int i = 0; i < ics.length; i++) {
+                // 检测接口访问级别是否为 protected 或 private
                 if (!Modifier.isPublic(ics[i].getModifiers())) {
+                    // 获取接口包名
                     String npkg = ics[i].getPackage().getName();
                     if (pkg == null) {
                         pkg = npkg;
                     } else {
                         if (!pkg.equals(npkg)) {
+                            // 非 public 级别的接口必须在同一个包下，否者抛出异常
                             throw new IllegalArgumentException("non-public interfaces from different packages");
                         }
                     }

@@ -415,6 +415,7 @@ public class DubboProtocol extends AbstractProtocol {
         optimizeSerialization(url);
 
         // create rpc invoker.
+        // getClients这个方法用于获取客户端实例，实例类型为 ExchangeClient
         DubboInvoker<T> invoker = new DubboInvoker<T>(serviceType, url, getClients(url), invokers);
         invokers.add(invoker);
 
@@ -426,6 +427,7 @@ public class DubboProtocol extends AbstractProtocol {
 
         boolean useShareConnect = false;
 
+        // 获取连接数，默认为0，表示未配置
         int connections = url.getParameter(CONNECTIONS_KEY, 0);
         List<ReferenceCountExchangeClient> shareClients = null;
         // if not configured, connection is shared, otherwise, one connection for one service
@@ -444,9 +446,11 @@ public class DubboProtocol extends AbstractProtocol {
         ExchangeClient[] clients = new ExchangeClient[connections];
         for (int i = 0; i < clients.length; i++) {
             if (useShareConnect) {
+                // 获取共享客户端
                 clients[i] = shareClients.get(i);
 
             } else {
+                // 初始化新的客户端
                 clients[i] = initClient(url);
             }
         }
@@ -462,6 +466,7 @@ public class DubboProtocol extends AbstractProtocol {
      */
     private List<ReferenceCountExchangeClient> getSharedClient(URL url, int connectNum) {
         String key = url.getAddress();
+        // 获取带有“引用计数”功能的 ExchangeClient
         List<ReferenceCountExchangeClient> clients = referenceClientMap.get(key);
 
         if (checkClientCanUse(clients)) {
@@ -573,8 +578,10 @@ public class DubboProtocol extends AbstractProtocol {
      * @return
      */
     private ReferenceCountExchangeClient buildReferenceCountExchangeClient(URL url) {
+        // 创建 ExchangeClient 客户端
         ExchangeClient exchangeClient = initClient(url);
 
+        // 将 ExchangeClient 实例传给 ReferenceCountExchangeClient，这里使用了装饰模式
         return new ReferenceCountExchangeClient(exchangeClient);
     }
 
@@ -602,9 +609,11 @@ public class DubboProtocol extends AbstractProtocol {
         try {
             // connection should be lazy
             if (url.getParameter(LAZY_CONNECT_KEY, false)) {
+                // 创建懒加载 ExchangeClient 实例
                 client = new LazyConnectExchangeClient(url, requestHandler);
 
             } else {
+                // 创建普通 ExchangeClient 实例
                 client = Exchangers.connect(url, requestHandler);
             }
 
