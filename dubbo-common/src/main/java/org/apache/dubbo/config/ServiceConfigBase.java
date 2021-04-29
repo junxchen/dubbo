@@ -157,6 +157,7 @@ public abstract class ServiceConfigBase<T> extends AbstractServiceConfig {
     }
 
     public boolean shouldDelay() {
+        // 获取 delay
         Integer delay = getDelay();
         return delay != null && delay > 0;
     }
